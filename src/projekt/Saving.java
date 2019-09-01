@@ -64,6 +64,13 @@ public class Saving implements Runnable
         }
     }
 
+    private int FewSeconds()
+    {
+        Random x = new Random();
+        int ret = x.nextInt(15);
+        return ret;
+    }
+
     public void UpdateCSV()
     {
         while (sem.tryAcquire());
@@ -78,12 +85,4 @@ public class Saving implements Runnable
 
         sem.release();
     }
-
-    private int FewSeconds()
-    {
-        Random x = new Random();
-        int ret = x.nextInt(15);
-        return ret;
-    }
-
 }
