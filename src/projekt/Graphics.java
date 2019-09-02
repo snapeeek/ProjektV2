@@ -3,7 +3,6 @@ package projekt;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.event.WindowEvent;
 
 public class Graphics
 {

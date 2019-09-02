@@ -1,8 +1,16 @@
 import projekt.*;
+import projekt.Graphics;
 
 import javax.naming.Name;
+import javax.swing.*;
+
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -20,7 +28,11 @@ public class Client
     protected FolderLocale folder;
     protected DataOutputStream dos;
     protected DataInputStream dis;
-
+    protected Graphics graphics;
+    protected JTextArea files = new JTextArea(20,50);
+    protected boolean ListNeeded = false;
+    protected boolean ChooseClient = false;
+    protected String SendingUser;
 
     public Client (String name, String sauce)
     {
@@ -40,7 +52,19 @@ public class Client
             IOExp.printStackTrace();
         }
 
-        //miejsce na grafike????
+        graphics=new Graphics("Klient"+username);
+        graphics.jPanel.add(files);
+        graphics.jLabel.setText("czekam");
+        files.setEditable(false);
+        JButton jButton=new JButton("Lista klientow");
+        jButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ListNeeded=true;
+            }
+        });
+        graphics.jFrame.add(jButton, BorderLayout.SOUTH);
+        graphics.jFrame.pack();
     }
 
     protected void NameVerification() throws NameAlreadyTakenException
@@ -82,6 +106,7 @@ public class Client
             ArrayList<String> ClientFiles = folder.GetNames();
 
             HowManyFiles = dis.readInt();
+            graphics.jLabel.setText("Odbieram");
 
             for (int i = 0; i < HowManyFiles; i++)
             {
@@ -108,8 +133,66 @@ public class Client
                 {
                     while (mut.tryAcquire());
                     dos.writeUTF("New file");
-
+                    File temp = folder.ToSend.remove(0);
+                    files.append(temp.getName());
+                    dos.writeUTF(temp.getName());
+                    ServerMessage = dis.readUTF();
+                    if (ServerMessage.compareTo("Send") == 0)
+                    {
+                        mut.release();
+                        pool.execute(new Sending(temp, mut, dos));
+                        graphics.jLabel.setText("Wysylam");
+                        Thread.sleep(300);
+                    }
                 }
+                else if (graphics.end)
+                {
+                    while (mut.tryAcquire());
+                    dos.writeUTF("end");
+                    break;
+                }
+                else if (ListNeeded)
+                {
+                    while (mut.tryAcquire());
+                    dos.writeUTF("I need a list of clients");
+                    int number;
+                    number = dis.readInt();
+                    if (number > 0)
+                    {
+                        clients.clear();
+                        for (int i = 0; i < number; i++)
+                        {
+                            clients.add(dis.readUTF());
+                        }
+                    }
+                    ListNeeded = false;
+                    graphics.jFrame.setVisible(false);
+                    Graphics ToWhom = new Graphics("Komu wyslac?");
+                    int pos = 0;
+                    ToWhom.jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                    for (String x : clients)
+                    {
+                        JButton button = new JButton(x);
+                        button.addActionListener(new ActionListener()
+                        {
+                            @Override
+                            public void actionPerformed(ActionEvent e)
+                            {
+                                SendingUser = button.getText();
+                                ChooseClient = true;
+                                ToWhom.jFrame.setVisible(false);
+                                ToWhom.jFrame.dispose();
+                            }
+                        });
+                        GridBagConstraints grid = new GridBagConstraints();
+                        grid.gridx = pos;
+                        grid.gridy = 0;
+                        pos++;
+                        ToWhom.jPanel.add(button, grid);
+                    }
+                }
+
+
             }
 
         }
