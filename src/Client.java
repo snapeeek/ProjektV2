@@ -244,7 +244,7 @@ public class Client
                         {
                             mut.release();
                             dos.writeUTF("Send");
-                            pool.execute(new Receiving((path + "\\" + SendingFile, mut, dis));
+                            pool.execute(new Receiving((path + "\\" + SendingFile), mut, dis));
                             graphics.jLabel.setText("Odbieram");
                             Thread.sleep(500);
                             while (mut.tryAcquire());
