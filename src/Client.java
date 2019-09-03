@@ -33,6 +33,8 @@ public class Client
     protected boolean ListNeeded = false;
     protected boolean ChooseClient = false;
     protected String SendingUser;
+    protected boolean ChooseFile = false;
+    protected String SendingFile;
 
     public Client (String name, String sauce)
     {
@@ -151,54 +153,118 @@ public class Client
                     dos.writeUTF("end");
                     break;
                 }
-                else if (ListNeeded)
-                {
-                    while (mut.tryAcquire());
+                else if (ListNeeded) {
+                    while (mut.tryAcquire()) ;
                     dos.writeUTF("I need a list of clients");
                     int number;
                     number = dis.readInt();
-                    if (number > 0)
-                    {
+                    if (number > 0) {
                         clients.clear();
-                        for (int i = 0; i < number; i++)
-                        {
+                        for (int i = 0; i < number; i++) {
                             clients.add(dis.readUTF());
                         }
-                    }
-                    ListNeeded = false;
-                    graphics.jFrame.setVisible(false);
-                    Graphics ToWhom = new Graphics("Komu wyslac?");
-                    int pos = 0;
-                    ToWhom.jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-                    for (String x : clients)
-                    {
-                        JButton button = new JButton(x);
-                        button.addActionListener(new ActionListener()
-                        {
-                            @Override
-                            public void actionPerformed(ActionEvent e)
-                            {
-                                SendingUser = button.getText();
-                                ChooseClient = true;
-                                ToWhom.jFrame.setVisible(false);
-                                ToWhom.jFrame.dispose();
-                            }
-                        });
-                        GridBagConstraints grid = new GridBagConstraints();
-                        grid.gridx = pos;
-                        grid.gridy = 0;
-                        pos++;
-                        ToWhom.jPanel.add(button, grid);
+
+                        ListNeeded = false;
+                        graphics.jFrame.setVisible(false);
+                        Graphics ToWhom = new Graphics("Komu wyslac?");
+                        int pos = 0;
+                        ToWhom.jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                        for (String x : clients) {
+                            JButton button = new JButton(x);
+                            button.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    SendingUser = button.getText();
+                                    ChooseClient = true;
+                                    ToWhom.jFrame.setVisible(false);
+                                    ToWhom.jFrame.dispose();
+                                }
+                            });
+                            GridBagConstraints grid = new GridBagConstraints();
+                            grid.gridx = pos;
+                            grid.gridy = 0;
+                            pos++;
+                            ToWhom.jPanel.add(button, grid);
+                        }
+
+                        ToWhom.jFrame.pack();
+                        ToWhom.jFrame.setVisible(true);
+
+                        while (!ChooseClient) {
+                            Thread.sleep(500);
+                        }
+                        ChooseClient = false;
+                        Graphics WhatToSend = new Graphics("Co wyslac?");
+                        WhatToSend.jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                        pos = 0;
+                        for (String x : folder.GetNames()) {
+                            JButton butt = new JButton(x);
+                            butt.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    SendingFile = butt.getText();
+                                    ChooseFile = true;
+                                    WhatToSend.jFrame.setVisible(false);
+                                    WhatToSend.jFrame.dispose();
+                                }
+                            });
+                            GridBagConstraints grid = new GridBagConstraints();
+                            grid.gridx = pos;
+                            grid.gridy = 0;
+                            pos++;
+                            ToWhom.jPanel.add(butt, grid);
+                        }
+                        WhatToSend.jFrame.pack();
+                        WhatToSend.jFrame.setVisible(true);
+
+                        while (!ChooseFile) {
+                            Thread.sleep(500);
+                        }
+
+                        dos.writeUTF("File to client");
+                        dos.writeUTF(SendingFile);
+                        dos.writeUTF(SendingUser);
+                        graphics.jFrame.setVisible(true);
+                        mut.release();
                     }
                 }
-
-
+                else
+                {
+                    while (mut.tryAcquire());
+                    dos.writeUTF("Something for me?");
+                    ServerMessage = dis.readUTF();
+                    if (ServerMessage.compareTo("Yrs") == 0)
+                    {
+                        SendingFile = dis.readUTF();
+                        if (folder.GetNames().contains(SendingFile))
+                        {
+                            dos.writeUTF("I have this one");
+                        }
+                        else
+                        {
+                            mut.release();
+                            dos.writeUTF("Send");
+                            pool.execute(new Receiving((path + "\\" + SendingFile, mut, dis));
+                            graphics.jLabel.setText("Odbieram");
+                            Thread.sleep(500);
+                            while (mut.tryAcquire());
+                        }
+                    }
+                    mut.release();
+                }
+                graphics.jLabel.setText("Czekam");
             }
 
         }
         catch (Exception Exp)
         {
             Exp.printStackTrace();
+        }
+        finally
+        {
+            graphics.jFrame.setVisible(false);
+            graphics.jFrame.dispose();
+            pool.shutdown();
         }
     }
 

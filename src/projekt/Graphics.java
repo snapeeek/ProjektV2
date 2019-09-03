@@ -32,7 +32,7 @@ public class Graphics
         jLabel = new JLabel();
         jFrame.getContentPane().add(jLabel, BorderLayout.NORTH);
         jPanel = new JPanel(new GridBagLayout());
-        Border border = BorderFactory.createEmptyBorder(10,10,10,10);
+        Border border = BorderFactory.createEmptyBorder(20,20,20,20);
         jPanel.setBorder(border);
         jFrame.add(jPanel, BorderLayout.CENTER);
         jFrame.setSize(300,300);
