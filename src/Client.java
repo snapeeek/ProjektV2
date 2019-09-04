@@ -77,7 +77,7 @@ public class Client
             String ret = dis.readUTF();
             System.out.println(ret);
 
-            if (ret.compareTo("Name is already taken!") != 0)
+            if (ret.compareTo("Name is already taken") == 0)
                 throw new NameAlreadyTakenException();
         }
         catch (IOException IOExp)
@@ -150,7 +150,7 @@ public class Client
                 else if (graphics.end)
                 {
                     while (mut.tryAcquire());
-                    dos.writeUTF("end");
+                    dos.writeUTF("End");
                     break;
                 }
                 else if (ListNeeded) {
@@ -231,7 +231,7 @@ public class Client
                 else
                 {
                     while (mut.tryAcquire());
-                    dos.writeUTF("Something for me?");
+                    dos.writeUTF("Something for me");
                     ServerMessage = dis.readUTF();
                     if (ServerMessage.compareTo("Yrs") == 0)
                     {
@@ -281,6 +281,7 @@ public class Client
 
         var client = new Client(name, path);
 
+        client.graphics.jFrame.setVisible(true);
         client.run();
     }
 }

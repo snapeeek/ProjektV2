@@ -47,6 +47,7 @@ public class Server
         {
             JTextArea jTextArea = new JTextArea(20,10);
             jTextArea.setEditable(false);
+            lists.add(jTextArea);
             GridBagConstraints grid = new GridBagConstraints();
             grid.gridx = i;
             grid.gridy = 0;
@@ -201,14 +202,14 @@ public class Server
                 graphics.jLabel.setText("Przyjmuje imie");
                 synchronized (usernames)
                 {
-                    if (!username.isBlank() && !usernames.containsKey(usernames))
+                    if (!username.isBlank() && !usernames.containsKey(username))
                     {
                         usernames.put(username, mut);
                         dos.writeUTF("Name accepted");
                     }
                     else
                     {
-                        dos.writeUTF("Name is already taken!");
+                        dos.writeUTF("Name is already taken");
                         return;
                     }
                 }
@@ -293,7 +294,7 @@ public class Server
                         }
                         mut.release();
                     }
-                    else if (mess.compareTo("end") == 0)
+                    else if (mess.compareTo("End") == 0)
                     {
                         while (mut.tryAcquire());
                         clients.remove(username);
@@ -301,7 +302,7 @@ public class Server
                         System.out.println(username + " opuszcza server");
                         break;
                     }
-                    else if (mess.compareTo("Something for me?") == 0)
+                    else if (mess.compareTo("Something for me") == 0)
                     {
                         while (mut.tryAcquire());
                         synchronized (filesFromClients)
@@ -429,7 +430,7 @@ public class Server
                     FNFExp.printStackTrace();
                 }
             }
-            return new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server1\\content.txt");
+            return new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server1\\content.csv");
         }
 
         protected byte[] receive(DataInputStream in)
