@@ -21,12 +21,16 @@ public class Graphics
         WindowName = name;
         jFrame = new JFrame(WindowName);
         jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        jFrame.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+        jFrame.addWindowListener(new java.awt.event.WindowAdapter()
+        {
             @Override
-            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+            public void windowClosing(java.awt.event.WindowEvent windowEvent)
+            {
                 if (JOptionPane.showConfirmDialog(jFrame, "Are you sure you want to close?", "Closing",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION)
+                {
                     end = true;
+                }
             }
         });
         jLabel = new JLabel();
