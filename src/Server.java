@@ -3,20 +3,21 @@ import projekt.Graphics;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+import static java.lang.Thread.sleep;
+
 public class Server
 {
-    private static TreeMap<String, Semaphore> usernames = new TreeMap<>;
+    private static TreeMap<String, Semaphore> usernames = new TreeMap<>();
     private static ArrayList<Semaphore> content = new ArrayList<>();
     protected static TreeMap<String, DataOutputStream>  clients = new TreeMap<>();
     protected static ArrayList<FolderLocale> folders = new ArrayList<>();
@@ -73,6 +74,20 @@ public class Server
             {
                 pool.execute(new Handler(listener.accept()));
             }
+        }
+    }
+
+    protected static void TheEnd(){
+        if(graphics.end){
+            if(clients.size()==0){
+                graphics.jFrame.setVisible(false);
+                graphics.jFrame.dispose();
+                pool.shutdown();
+                System.exit(0);
+            }
+        }
+        else{
+            graphics.end=false;
         }
     }
 
@@ -178,7 +193,260 @@ public class Server
 
         public void run()
         {
+            try
+            {
+                dos = new DataOutputStream(socket.getOutputStream());
+                dis = new DataInputStream(socket.getInputStream());
+                username = dis.readUTF();
+                graphics.jLabel.setText("Przyjmuje imie");
+                synchronized (usernames)
+                {
+                    if (!username.isBlank() && !usernames.containsKey(usernames))
+                    {
+                        usernames.put(username, mut);
+                        dos.writeUTF("Name accepted");
+                    }
+                    else
+                    {
+                        dos.writeUTF("Name is already taken!");
+                        return;
+                    }
+                }
+
+                String mess;
+                String toWhom;
+                String filename;
+                File temp;
+                clients.put(username, dos);
+                tasks.put(username, filesFromClients);
+                System.out.println(clients);
+                mut.acquire();
+                ArrayList<File> startingFiles = SendingAtStart(username);
+                dos.writeInt(startingFiles.size());
+
+                for (File file:startingFiles)
+                {
+                    mut.release();
+                    dos.writeUTF(file.getName());
+                    mess = dis.readUTF();
+                    if (mess.compareTo("Yes") == 0)
+                    {
+                        pool.execute(new Sending(file, mut, dos));
+                        graphics.jLabel.setText("Wysylam");
+                        sleep(100);
+                    }
+                    while (mut.tryAcquire());
+                }
+
+                byte buff[];
+                mut.release();
+
+                while (true)
+                {
+                    mess = dis.readUTF();
+                    if (mess.compareTo("New file") == 0)
+                    {
+                        while (mut.tryAcquire());
+                        graphics.jLabel.setText("Odbieram");
+                        filename = dis.readUTF();
+                        if (FindFile(filename, username).getName().compareTo("content.csv") == 0)
+                        {
+                            dos.writeUTF("Send");
+                            buff = receive(dis);
+                            control.queue.add(new Task(filename, buff, username));
+                        }
+                        else
+                        {
+                            dos.writeUTF("I have this one");
+                        }
+                        mut.release();
+                    }
+                    else if (mess.compareTo("File to client") == 0)
+                    {
+                        while (mut.tryAcquire());
+                        graphics.jLabel.setText("Wysylam");
+                        filename = dis.readUTF();
+                        toWhom = dis.readUTF();
+                        temp = FindFile(filename, username);
+                        if (temp.getName().compareTo("content.csv") != 0)
+                        {
+                            synchronized (tasks)
+                            {
+                                tasks.get(toWhom).add(new Task(username, temp));
+                            }
+                        }
+                        mut.release();
+                    }
+                    else if (mess.compareTo("I need a list of clients") == 0)
+                    {
+                        while (mut.tryAcquire());
+                        dos.writeInt(usernames.size() - 1);
+                        if (usernames.size() > 1)
+                        {
+                            for (String c : usernames.keySet())
+                            {
+                                if (c.compareTo(username) != 0)
+                                {
+                                    dos.writeUTF(c);
+                                }
+                            }
+                        }
+                        mut.release();
+                    }
+                    else if (mess.compareTo("end") == 0)
+                    {
+                        while (mut.tryAcquire());
+                        clients.remove(username);
+                        usernames.remove(username);
+                        System.out.println(username + " opuszcza server");
+                        break;
+                    }
+                    else if (mess.compareTo("Something for me?") == 0)
+                    {
+                        while (mut.tryAcquire());
+                        synchronized (filesFromClients)
+                        {
+                            if (filesFromClients.size() != 0)
+                            {
+                                dos.writeUTF("Yes");
+                                Task task = filesFromClients.remove(0);
+                                dos.writeUTF(task.filename);
+                                mess=dis.readUTF();
+                                if (mess.compareTo("Send") == 0)
+                                {
+                                    mut.release();
+                                    pool.execute(new Sending(task.file, mut, dos));
+                                    graphics.jLabel.setText("Wysylam");
+                                    Thread.sleep(500);
+                                    while(mut.tryAcquire());
+                                }
+                            }
+                            else
+                            {
+                                dos.writeUTF("No");
+                            }
+                        }
+                        mut.release();
+                    }
+                    graphics.jLabel.setText("Czekam");
+                }
+            }
+            catch (Exception Exp)
+            {
+                Exp.printStackTrace();
+            }
+            finally
+            {
+                try
+                {
+                    socket.close();
+                    TheEnd();
+                }
+                catch (IOException IOExp)
+                {
+                    IOExp.printStackTrace();
+                }
+            }
 
         }
+
+        protected ArrayList<File> SendingAtStart(String owner)
+        {
+            Scanner scanner;
+            String s;
+            String[] b;
+            File temp;
+            boolean isRunning;
+            ArrayList<File> ret = new ArrayList<>();
+
+            try
+            {
+                for (Integer i = 1; i < 6; i++)
+                {
+                    File content = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\content.csv");
+                    isRunning = true;
+                    while (isRunning)
+                    {
+                        if (content.canRead())
+                        {
+                            scanner = new Scanner(content);
+                            while (scanner.hasNextLine())
+                            {
+                                s = scanner.nextLine();
+                                b = s.split(",");
+                                if (b[1].compareTo(owner) == 0)
+                                {
+                                    temp = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\" + b[1]);
+                                    ret.add(temp);
+                                }
+                            }
+                            isRunning = false;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                sleep(500);
+                            }
+                            catch (InterruptedException IntExp)
+                            {
+                                isRunning = false;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (FileNotFoundException FNFExp)
+            {
+                FNFExp.printStackTrace();
+            }
+            return ret;
+        }
+
+        protected File FindFile(String name, String owner)
+        {
+            File temp;
+            Scanner scanner;
+            String info;
+            for (Integer i = 1; i < 6; i++)
+            {
+                File content = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\content.csv");
+                try
+                {
+                    scanner = new Scanner(content);
+                    while (scanner.hasNextLine())
+                    {
+                        info = scanner.nextLine();
+                        if (info.compareTo(name + "," + owner) == 0)
+                        {
+                            temp = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\" + name);
+                            return temp;
+                        }
+                    }
+                }
+                catch (FileNotFoundException FNFExp)
+                {
+                    FNFExp.printStackTrace();
+                }
+            }
+            return new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server1\\content.txt");
+        }
+
+        protected byte[] receive(DataInputStream in)
+        {
+            byte[] b = new byte[0];
+            try
+            {
+                Long size = in.readLong();
+                b = new byte[size.intValue()];
+                in.readFully(b);
+            }
+            catch (IOException IOExp)
+            {
+                IOExp.printStackTrace();
+            }
+            return b;
+        }
+
     }
 }

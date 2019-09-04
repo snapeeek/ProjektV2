@@ -77,7 +77,7 @@ public class Client
             String ret = dis.readUTF();
             System.out.println(ret);
 
-            if (ret.compareTo("chuj") != 0)
+            if (ret.compareTo("Name is already taken!") != 0)
                 throw new NameAlreadyTakenException();
         }
         catch (IOException IOExp)
