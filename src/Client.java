@@ -225,7 +225,7 @@ public class Client
                     while (mut.tryAcquire());
                     dos.writeUTF("Something for me");
                     ServerMessage = dis.readUTF();
-                    if (ServerMessage.compareTo("Yrs") == 0)
+                    if (ServerMessage.compareTo("Yes") == 0)
                     {
                         SendingFile = dis.readUTF();
                         if (folder.GetNames().contains(SendingFile))
