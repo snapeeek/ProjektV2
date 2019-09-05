@@ -76,7 +76,7 @@ public class Saving implements Runnable
         while (sem.tryAcquire());
         try
         {
-            Files.write(Paths.get("C:\\Users\\mwozn\\Desktop\\FolProj\\Server" + folder.toString() + "\\content.csv"), (filename + "," + username + "\n").getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + folder.toString() + "\\content.csv"), (filename + "," + username + "\n").getBytes(), StandardOpenOption.APPEND);
         }
         catch (IOException IOExp)
         {

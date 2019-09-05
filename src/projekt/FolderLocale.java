@@ -49,17 +49,17 @@ public class FolderLocale
 
     public ArrayList<String> GetNames()
     {
-        ArrayList<String> ret = new ArrayList<String>(Arrays.asList(file.list()));
+        ArrayList<String> ret = new ArrayList<>(Arrays.asList(file.list()));
         ArrayList<String> temp;
         FolderLocale help;
         int size = ret.size();
 
         for (int i = 0; i < size; i++)
         {
-            if (ret.get(i).contains(".") == false)
+            if (!ret.get(i).contains("."))
             {
                 help = new FolderLocale(path+"\\"+ret.get(i));
-                temp=help.GetNames();
+                temp = help.GetNames();
                 ret.addAll(temp);
                 ret.remove(i);
             }

@@ -59,12 +59,7 @@ public class Client
         graphics.jLabel.setText("czekam");
         files.setEditable(false);
         JButton jButton=new JButton("Lista klientow");
-        jButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ListNeeded=true;
-            }
-        });
+        jButton.addActionListener(e -> ListNeeded = true);
         graphics.jFrame.add(jButton, BorderLayout.SOUTH);
         graphics.jFrame.pack();
     }
@@ -105,6 +100,7 @@ public class Client
             ArrayList<String> clients = new ArrayList<>();
             String filename;
             int HowManyFiles;
+
             ArrayList<String> ClientFiles = folder.GetNames();
 
             HowManyFiles = dis.readInt();
@@ -171,14 +167,11 @@ public class Client
                         ToWhom.jFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                         for (String x : clients) {
                             JButton button = new JButton(x);
-                            button.addActionListener(new ActionListener() {
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    SendingUser = button.getText();
-                                    ChooseClient = true;
-                                    ToWhom.jFrame.setVisible(false);
-                                    ToWhom.jFrame.dispose();
-                                }
+                            button.addActionListener(e -> {
+                                SendingUser = button.getText();
+                                ChooseClient = true;
+                                ToWhom.jFrame.setVisible(false);
+                                ToWhom.jFrame.dispose();
                             });
                             GridBagConstraints grid = new GridBagConstraints();
                             grid.gridx = pos;
@@ -199,20 +192,17 @@ public class Client
                         pos = 0;
                         for (String x : folder.GetNames()) {
                             JButton butt = new JButton(x);
-                            butt.addActionListener(new ActionListener() {
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    SendingFile = butt.getText();
-                                    ChooseFile = true;
-                                    WhatToSend.jFrame.setVisible(false);
-                                    WhatToSend.jFrame.dispose();
-                                }
+                            butt.addActionListener(e -> {
+                                SendingFile = butt.getText();
+                                ChooseFile = true;
+                                WhatToSend.jFrame.setVisible(false);
+                                WhatToSend.jFrame.dispose();
                             });
                             GridBagConstraints grid = new GridBagConstraints();
                             grid.gridx = pos;
                             grid.gridy = 0;
                             pos++;
-                            ToWhom.jPanel.add(butt, grid);
+                            WhatToSend.jPanel.add(butt, grid);
                         }
                         WhatToSend.jFrame.pack();
                         WhatToSend.jFrame.setVisible(true);
@@ -221,6 +211,8 @@ public class Client
                             Thread.sleep(500);
                         }
 
+
+                        ChooseFile = false;
                         dos.writeUTF("File to client");
                         dos.writeUTF(SendingFile);
                         dos.writeUTF(SendingUser);

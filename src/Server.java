@@ -40,6 +40,7 @@ public class Server
             folders.add(new FolderLocale("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString()));
             content.add(new Semaphore(1));
         }
+        sleep(50);
         control = new Control(pool);
         pool.execute(control);
         graphics = new Graphics("Server");
@@ -273,7 +274,7 @@ public class Server
                         {
                             synchronized (tasks)
                             {
-                                tasks.get(toWhom).add(new Task(username, temp));
+                                tasks.get(toWhom).add(new Task(filename, temp));
                             }
                         }
                         mut.release();
@@ -377,7 +378,7 @@ public class Server
                                 b = s.split(",");
                                 if (b[1].compareTo(owner) == 0)
                                 {
-                                    temp = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\" + b[1]);
+                                    temp = new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server" + i.toString() + "\\" + b[0]);
                                     ret.add(temp);
                                 }
                             }
