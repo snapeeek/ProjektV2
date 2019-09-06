@@ -9,15 +9,32 @@ import java.nio.file.StandardOpenOption;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
+/**
+ * klasa zapisujaca zawartosc do pliku
+ */
 public class Saving implements Runnable
 {
+    /**zawartosc pliku*/
     public byte[] filecontent;
+    /**nazwa pliku*/
     public String filename;
+    /**numer folderu do ktorego plik bedzie zapisany*/
     Integer folder;
+    /** semafor dzieki ktoremu mozna zapisac zawartosc*/
     Semaphore sem;
+    /** wlasciciel pliku*/
     String username;
+    /**sciezka zapisu*/
     String sauce;
 
+    /**
+     * @param fc zawartosc pliku
+     * @param fn nazwa pliku
+     * @param f numer folderu
+     * @param s semafor
+     * @param un wlasciciel pliku
+     * @param p sciezka zapisu
+     */
     public Saving(byte[] fc, String fn, Integer f, Semaphore s, String un, String p)
     {
         filecontent = fc;
@@ -28,7 +45,11 @@ public class Saving implements Runnable
         sauce = p;
     }
 
-
+    /**
+     * glowna funkcja zapisujaca
+     * zeby zwizualizowac symulacje na niewielkiej liczbie uzytkownikow watek jest usypiany na losowa liczbe sekund
+     * nastepnie zapisuje plik w podanej lokalizacji oraz uaktualnia plik csv
+     */
     @Override
     public void run()
     {
@@ -64,6 +85,10 @@ public class Saving implements Runnable
         }
     }
 
+    /**
+     * funkcja losujaca ilosc sekund ktore bedzie czekac watek
+     * @return ilosc sekund
+     */
     private int FewSeconds()
     {
         Random x = new Random();
@@ -71,6 +96,9 @@ public class Saving implements Runnable
         return ret;
     }
 
+    /**
+     *funkcja uakualniajaca plik csv
+     */
     public void UpdateCSV()
     {
         while (sem.tryAcquire());

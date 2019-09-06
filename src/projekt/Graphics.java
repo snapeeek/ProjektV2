@@ -4,18 +4,25 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 
+/** klasa odpowiedzalna za oprawe graficzna*/
 public class Graphics
 {
+    /**glowna rama okna*/
     public JFrame jFrame;
-
+    /**panel do ktorego mozna dodawac elementy*/
     public JPanel jPanel;
-
+    /**etykieta wyswietlajaca komunikaty*/
     public JLabel jLabel;
-
+    /**String przechowujacy nazwe okna*/
     private String WindowName;
-
+    /**zmienna zero-jedynkowa odpowiadajaca za zamykanie okna*/
     public boolean end;
 
+    /**
+     * konstruktor tworzacy okno o podanym tytule oraz ustalajacy etykiete
+     * w konstruktorze zawarte jest takze postepowanie przy zamykaniu okna
+     * @param name tytul okna
+     */
     public Graphics(String name)
     {
         WindowName = name;

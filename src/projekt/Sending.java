@@ -3,14 +3,23 @@ package projekt;
 import java.io.*;
 import java.util.concurrent.Semaphore;
 
+/**
+ * klasa umozliwajaca wysylanie pliku przez strumien wyjscia
+ */
 public class Sending implements Runnable
 {
+    /**plik*/
     private File file;
-
+    /**semafor umozliwiajacy dostep do strumienia*/
     private Semaphore sem;
-
+    /**strumien wyjscia*/
     private DataOutputStream output;
 
+    /**
+     * @param f plik
+     * @param s semafor
+     * @param dos strumien wyjsciowy
+     */
     public Sending(File f, Semaphore s, DataOutputStream dos)
     {
         file = f;
@@ -18,6 +27,12 @@ public class Sending implements Runnable
         output = dos;
     }
 
+    /**
+     * glowna funkcja wykonwcza
+     * najpierw pobiera wielkosc pliku, nastepnie tworzy bufor o takiej samej wielkosci
+     * uzyskuje dostep do semafora, wczytuje plik do buforowanego strumienia
+     * przesyla plik poprzez strumien
+     */
     @Override
     public void run()
     {

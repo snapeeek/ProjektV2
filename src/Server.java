@@ -15,20 +15,36 @@ import java.util.concurrent.Semaphore;
 
 import static java.lang.Thread.sleep;
 
+/**
+ * glowna klasa budujaca serwer
+ */
 public class Server
 {
+    /**przechowywanie nazwy klienta i semafora kontrolujacego jego strumeinie*/
     private static TreeMap<String, Semaphore> usernames = new TreeMap<>();
+    /**lista zawierajaca semafory kontrolujace pisanie do pliku z zawartoscia*/
     private static ArrayList<Semaphore> content = new ArrayList<>();
+    /**przechowywanie klientow oraz strumieni do nich*/
     protected static TreeMap<String, DataOutputStream>  clients = new TreeMap<>();
+    /**lista przechowyjaca @see com.my.projekt.FolderLocale*/
     protected static ArrayList<FolderLocale> folders = new ArrayList<>();
+    /**przechowywanie nazwy klienta oraz jego liste zadan*/
     private static TreeMap<String, ArrayList<Task>> tasks = new TreeMap<>();
+    /**pula watkow*/
     private static ExecutorService pool;
+    /**okno graficnze*/
     protected static Graphics graphics;
+    /**lista pol tekstowych*/
     private static ArrayList<JTextArea> lists = new ArrayList<>();
+    /**klasa kontrolujaca zapis @see Control*/
     protected static Control control;
 
 
-
+    /**
+     * klasa main rozpoczynajaca dzialanie serwera
+     * tworzy zmienne, grafike i klasy
+     * nastepnie nasluchuje czy klient chce sie polaczyc i uruchamia jego obsluge
+     */
     public static void main(String[] args) throws Exception
     {
         System.out.println("Server is currently running");
@@ -79,6 +95,9 @@ public class Server
         }
     }
 
+    /**
+     *funkcja konczaca prace serwera
+     */
     protected static void TheEnd(){
         if(graphics.end){
             if(clients.size()==0){
@@ -93,17 +112,30 @@ public class Server
         }
     }
 
+    /**
+     * klasa kontrolujaca wykonywanie dzialan
+     */
     protected static class Control implements Runnable
     {
+        /**pula watkow*/
         private ExecutorService pool;
+        /**lista zadan @see com.my.projekt.Task*/
         protected ArrayList<Task> queue;
 
+        /**
+         * konstruktor inicjujacy kolejke
+         * @param executorService pula watkow
+         */
         private Control(ExecutorService executorService)
         {
             pool = executorService;
             queue = new ArrayList<>();
         }
 
+        /**
+         * funkcja sprawdzajaca ilosc klientow polaczonych z serwerem ktorzy maja jakies zadanie do wykonania
+         * @return liczba klientow majaca zadania
+         */
         private int HowManyClients()
         {
             int ret = 0;
@@ -117,6 +149,10 @@ public class Server
             return ret;
         }
 
+        /**
+         * funkcja porownuje ile plikow znajduje sie w danych folderach
+         * @return folder w ktorym jest najmniej plikow
+         */
         private Integer WhichFolder()
         {
             for (int i = 0; i < 5; i++)
@@ -137,7 +173,10 @@ public class Server
             }
             return ret;
         }
-
+        /**
+         * funkcja obslugujaca ruch w sposob przemienny, czyli taki zeby jeden uzytkownik nie realizowal dzialan kilka razy z rzedu
+         * dzieki temu klient nie musi czekac
+         */
         @Override
         public void run()
         {
@@ -178,21 +217,37 @@ public class Server
         }
     }
 
+    /**
+     * klasa obslugujaca klienta
+     */
     protected static class Handler implements Runnable
     {
+        /**nazwa klienta*/
         private String username;
+        /**lista zadan zleconych przez innych klientow*/
         private ArrayList<Task> filesFromClients = new ArrayList<>();
+        /**gniazdo na ktorym klient jest podlaczony*/
         private Socket socket;
+        /**semafor kontrolujacy strumienie*/
         final Semaphore mut;
+        /**strumien wyjsciowy*/
         DataOutputStream dos;
+        /**strumien wejsciowy*/
         DataInputStream dis;
 
+        /**
+         * kontroler tworzy semafor oraz przypisuje gniazdo
+         * @param sock gniazdo
+         */
         protected Handler(Socket sock)
         {
             this.socket = sock;
             mut = new Semaphore(1);
         }
 
+        /**
+         * glowna funkcja obslugujaca komunikaty klienta
+         */
         public void run()
         {
             try
@@ -201,6 +256,9 @@ public class Server
                 dis = new DataInputStream(socket.getInputStream());
                 username = dis.readUTF();
                 graphics.jLabel.setText("Przyjmuje imie");
+                /**
+                 * imie jest przyjmowanie od klienta i jesli nie istenieje inny klient o podanej nazwie to zostaje on przyjety
+                 */
                 synchronized (usernames)
                 {
                     if (!username.isBlank() && !usernames.containsKey(username))
@@ -215,6 +273,11 @@ public class Server
                     }
                 }
 
+                /**
+                 * gdy klient zostanie zakceptowany wysylamy do niego kliki, ktorych jest wlascicielem
+                 * jest to sprawdzane metoda start
+                 * jesli klient dany plik juz posiada, to jest on ignorowany
+                 */
                 String mess;
                 String toWhom;
                 String filename;
@@ -243,9 +306,18 @@ public class Server
                 byte buff[];
                 mut.release();
 
+                /**
+                 * petla osblugujaca komunikaty od klienta
+                 */
                 while (true)
                 {
+                    /**
+                     * pobieranie komunikatu od klienta
+                     */
                     mess = dis.readUTF();
+                    /**
+                     * jesli klient ma nowy plik do wyslania to serwer go odbiera i wysyla zadanie do kotnrolera
+                     */
                     if (mess.compareTo("New file") == 0)
                     {
                         while (mut.tryAcquire());
@@ -263,6 +335,12 @@ public class Server
                         }
                         mut.release();
                     }
+                    /**
+                     * jesli klient chce wyslac plik do innego klienta to
+                     * odbieramy od niego nazwe pliku, nazwe klienta
+                     * nastepnie wyszukujemy plik za pomoca metody FindFile
+                     * dodajemy zadanie wyslania pliku
+                     */
                     else if (mess.compareTo("File to client") == 0)
                     {
                         while (mut.tryAcquire());
@@ -279,6 +357,11 @@ public class Server
                         }
                         mut.release();
                     }
+                    /**
+                     * jesli uzytkownik potrzebuje listy klientow
+                     * najpierw wysylamy mu liczbe klientow
+                     * jesli jest ich wiecej niz jeden to wysylamy ich nazwy
+                     */
                     else if (mess.compareTo("I need a list of clients") == 0)
                     {
                         while (mut.tryAcquire());
@@ -295,6 +378,9 @@ public class Server
                         }
                         mut.release();
                     }
+                    /**
+                     * jesli klient zakonczyl program jest on usuwany z listy klientow a petla zostaje przerwana
+                     */
                     else if (mess.compareTo("End") == 0)
                     {
                         while (mut.tryAcquire());
@@ -303,6 +389,9 @@ public class Server
                         System.out.println(username + " opuszcza server");
                         break;
                     }
+                    /**
+                     * jesli klient pyta o nowe pliki i faktycznie takowe sie znajduja to sa mu wysylane
+                     */
                     else if (mess.compareTo("Something for me") == 0)
                     {
                         while (mut.tryAcquire());
@@ -352,6 +441,11 @@ public class Server
 
         }
 
+        /**
+         * funkcja startowoa wysylajaca klientowi wszystkie pliki, ktorych jest wlascicielem
+         * @param owner nazwa uzytkownika
+         * @return lista plikow ktore naleza do klienta
+         */
         protected ArrayList<File> SendingAtStart(String owner)
         {
             Scanner scanner;
@@ -405,6 +499,12 @@ public class Server
             return ret;
         }
 
+        /**
+         * funkcja sprawdza czy na serwerze znajduje sie plik o danej nazwie i wlascicielu
+         * @param name nazwa pliku
+         * @param owner wlasciciel
+         * @return plik, jesli zostal odnaleziony lub plik opisujacy zawartosc jesli nie zostal znaleziony
+         */
         protected File FindFile(String name, String owner)
         {
             File temp;
@@ -434,6 +534,11 @@ public class Server
             return new File("C:\\Users\\mwozn\\Desktop\\FolServ\\Server1\\content.csv");
         }
 
+        /**
+         * funkcja odbierajaca plik ze strumienia
+         * @param in strumien z ktorego dane sa pobierane
+         * @return tabela bajtow pobranych ze strumienia
+         */
         protected byte[] receive(DataInputStream in)
         {
             byte[] b = new byte[0];

@@ -4,14 +4,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/** klasa odpowiedzialna za obsluge folderu */
 public class FolderLocale
 {
+    /**lista plikow w folderze*/
     public ArrayList<File> FilesList;
+    /**lista plikow, ktore nalezy wyslac*/
     public ArrayList<File> ToSend;
-
+    /**sciezka folderu */
     String path;
+    /**folder*/
     File file;
 
+    /**konstruktor inicjujacy zmienne
+     *
+     * @param p sciezka do folderu
+     */
     public FolderLocale(String p)
     {
         FilesList = new ArrayList<>();
@@ -20,6 +28,8 @@ public class FolderLocale
         file = new File(path);
     }
 
+    /**funkcja sprawdzajaca czy pojawil sie nowy plik w folderze - jesli tak to dodaje go do listy ToSend oraz do listy FilesList
+     */
     public void NewFile()
     {
         ArrayList<File> temp = new ArrayList<File>(Arrays.asList(file.listFiles()));
@@ -47,6 +57,7 @@ public class FolderLocale
         }
     }
 
+    /** funkcja zwracajaca nazwy plikow w folderze */
     public ArrayList<String> GetNames()
     {
         ArrayList<String> ret = new ArrayList<>(Arrays.asList(file.list()));

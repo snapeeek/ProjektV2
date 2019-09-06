@@ -6,14 +6,24 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
 
+/**
+ * klasa odpowiedzialna za odbir plikow
+ */
 public class Receiving implements Runnable
 {
+    /**sciezka do pliku*/
     private String sauce;
-
+    /**semafor ktory kontroluje strumien*/
     private Semaphore sem;
-
+    /**strumien wejsciowy*/
     private DataInputStream input;
 
+    /**
+     * konstruktor przypisujacy zmienne
+     * @param pth sciezka
+     * @param s semafor
+     * @param dis strumien
+     */
     public Receiving(String pth, Semaphore s, DataInputStream dis)
     {
         sauce = pth;
@@ -21,6 +31,10 @@ public class Receiving implements Runnable
         input = dis;
     }
 
+    /**
+     * glowna funkcja. Najpierw uzyskuje dostep do semafora, nastepnie pobiera rozmiar pliki
+     * tworzy tablice o takim rozmiarze, pobiera plik i zapisuje go w danej lokalizacji
+     */
     @Override
     public void run()
     {

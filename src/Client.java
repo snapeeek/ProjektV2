@@ -18,24 +18,47 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
+/**
+ * klasa odpowiedzialna za klienta i komunikacje z serwerem
+ */
 public class Client
 {
+    /**adres na ktory klient sie laczy*/
     private String serverIP;
+    /**semafor kontrolujacy strumienie*/
     private Semaphore mut;
+    /**nazwa uzytkownika*/
     protected String username;
+    /**sciezka do folderu klienta*/
     protected String path;
+    /**gniazdo do polaczenia z serwerem*/
     protected Socket sock;
+    /**folder lokalny klienta*/
     protected FolderLocale folder;
+    /**strumien wyjsciowy*/
     protected DataOutputStream dos;
+    /**strumien wejsciowy*/
     protected DataInputStream dis;
+    /**okno graficzne*/
     protected Graphics graphics;
+    /**pole tekstowe*/
     protected JTextArea files = new JTextArea(20,50);
+    /**zmienia wartosc kiedy uzytkownik wysyla wiadomosc o potrzebie list*/
     protected boolean ListNeeded = false;
+    /**zmienia wartosc gdy uzytkownik chce wybrac uzytkownika do przeslania mu pliku*/
     protected boolean ChooseClient = false;
+    /**nazwa klienta do ktorego chcemy wyslac plik*/
     protected String SendingUser;
+    /**zmienia wartosc gdy uzytkownik chce wybrac plik do wyuslania*/
     protected boolean ChooseFile = false;
+    /**sciezka pliku ktory bedzie wysylany*/
     protected String SendingFile;
 
+    /**
+     * konstruktor tworzacy okno graficzne i inicjalizujacy zmienne
+     * @param name nazwa uzytkownika
+     * @param sauce sciezka do folderu
+     */
     public Client (String name, String sauce)
     {
         this.serverIP = "127.0.0.1";
@@ -64,6 +87,10 @@ public class Client
         graphics.jFrame.pack();
     }
 
+    /**
+     * funkcja wysylajaca imie klienta do serwera i oczekujaca jego akceptacji
+     * @throws NameAlreadyTakenException wyjatek rzucany gdy imie jest juz zajete
+     */
     protected void NameVerification() throws NameAlreadyTakenException
     {
         try
@@ -81,8 +108,12 @@ public class Client
         }
     }
 
+    /**
+     * glowma funkcja odpowiedzialna za obsluge klienta i komunikacje z serwerem
+     */
     protected void run()
     {
+        /**tworzenie puli watkow i weryfikacja imienia*/
         ExecutorService pool = Executors.newFixedThreadPool(10);
         try
         {
@@ -96,13 +127,20 @@ public class Client
                 System.out.println(NATExp.GetWarning());
             }
 
+            /**zmienna do zapisu komunikatow z serwera*/
             String ServerMessage;
+            /**lista klientow polaczonych z serwerem*/
             ArrayList<String> clients = new ArrayList<>();
+            /**nazwa pliku (do wyslania/odebrania)*/
             String filename;
+            /**zmienna przechowujaca liczbe plikow ktore beda przeslane z serwera*/
             int HowManyFiles;
-
+            /**lista plikow w folderze*/
             ArrayList<String> ClientFiles = folder.GetNames();
 
+            /**pobieranie liczby plikow z serwera. Jesli klient posiada taki plik to wysyla komunikat "No"
+             * jesli go nie posiada odsyla "Yes" i pobiera pliki
+             */
             HowManyFiles = dis.readInt();
             graphics.jLabel.setText("Odbieram");
 
@@ -123,10 +161,15 @@ public class Client
                 }
             }
 
+            /**
+             * glowna petla do komunikacji z serwerem
+             */
             while (true)
             {
+                /**sprawdzanie czy w folderze klienta jest nowy plik*/
                 folder.NewFile();
 
+                /**jesli pojawil sie nowy plik i nie ma go na serwerze to jest on wysylany*/
                 if (folder.ToSend.size() > 0)
                 {
                     while (mut.tryAcquire());
@@ -143,12 +186,20 @@ public class Client
                         Thread.sleep(300);
                     }
                 }
+                /**jezeli okno graficzne zostalo zamnkiete program konczy sie*/
                 else if (graphics.end)
                 {
                     while (mut.tryAcquire());
                     dos.writeUTF("End");
                     break;
                 }
+                /**jesli klient zazada listy, do serwera jest odpowiedni komunikat.
+                 * nastepnie serwer przesyla liste klientow (o ile jest ich wiecej niz 1) i dla niej tworzone jest nowe okno graficzne
+                 * gdy uzytkownik wybierze uzytkownika do ktorego chce wyslac plik inicjowane jest kolejne okno graficzne
+                 * w nowym oknie graficznym uzytkownik musi dokonac wyboru pliku ktory chce wyslac
+                 * po wyborze plik jest wysylany do innego klienta
+                 * wysylka pliku jest poprzedzona odpowiednim komunikatem dla serwera
+                 */
                 else if (ListNeeded) {
                     while (mut.tryAcquire()) ;
                     dos.writeUTF("I need a list of clients");
@@ -220,6 +271,7 @@ public class Client
                         mut.release();
                     }
                 }
+                /**jezeli nic sie nie wydarzylo, klient wysyla zapytanie o nowe pliki dla niego*/
                 else
                 {
                     while (mut.tryAcquire());
@@ -254,12 +306,17 @@ public class Client
         }
         finally
         {
+            /**program konczy sie poprzez wylaczenie puli watkow oraz usuniecie okna*/
             graphics.jFrame.setVisible(false);
             graphics.jFrame.dispose();
             pool.shutdown();
         }
     }
 
+    /**funkcja main sprawdza czy klient ma odpowiednia ilosc argumentow oraz uruchamia funkcje run
+     *
+     * @param args pierwszy to nazwa klienta, a drugi to sciezka do jego folderu
+     */
     public static void main(String[] args)
     {
         if (args.length != 2)
